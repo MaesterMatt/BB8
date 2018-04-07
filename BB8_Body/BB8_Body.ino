@@ -33,8 +33,8 @@ void setup() {
   pinMode(5, OUTPUT);
   pinMode(6, OUTPUT);
   pinMode(7, OUTPUT);
-  pinMode(A8, INPUT);
-  pinMode(A9, INPUT);
+  pinMode(A6, INPUT);
+  pinMode(A7, INPUT);
 
   // Set the PA Level low to prevent power supply related issues since this is a
  // getting_started sketch, and the likelihood of close proximity of the devices. RF24_PA_MAX is default.
@@ -59,7 +59,7 @@ void loop() {
   unsigned int data;
   int x, y;
   
-  if(true || radio.available()){                                                                // Variable for the received timestamp
+  if(radio.available()){                                                                // Variable for the received timestamp
     /*while (radio.available()) {                                   // While there is data ready
       radio.read( &data, sizeof(unsigned int) );             // Get the payload
     }
@@ -67,8 +67,8 @@ void loop() {
     */
     //y = data & 0xFF;
     //x = (data >> 8) & 0xFF;
-    y = analogRead(A9);
-    x = analogRead(A8);
+    x = analogRead(A7);
+    y = analogRead(A6);
     //leftMotorSpeed += (y - 127) + x;
     //rightMotorSpeed += (y - 127) - x;
 

@@ -13,7 +13,7 @@
 bool radioNumber = 0;
 
 /* Hardware configuration: Set up nRF24L01 radio on SPI bus plus pins 7 & 8 */
-RF24 radio(8, 53);
+RF24 radio(6, 5);
 /**********************************************************/
 
 byte addresses[][6] = {"1Node","2Node"};

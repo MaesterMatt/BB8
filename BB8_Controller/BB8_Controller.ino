@@ -49,31 +49,16 @@ void setup() {
     radio.openWritingPipe(addresses[0]);
     radio.openReadingPipe(1,addresses[1]);
   }
-  
-  // Start the radio listening for data
-
-  radio.stopListening();                                    // First, stop listening so we can talk.
+  radio.stopListening(); // First, stop listening so we can talk.
 }
 
 void loop() {
   unsigned long message = 0x00;
-  if (state == 0)  { // Joystick 1 X
-      x1 = analogRead(A7);
-      
-      //x1 = constrain((x1-512)*2, -1023, 1023);
-      x1 = map(x1, 0, 1023, 0, 31);
-      message |= (state << 5);
-      message |= x1;
-      state = 1;
-  }
-  else if (state == 1){ // Joystick 1 Y
-      y1 = analogRead(A6);
-      //y1 = constrain((y1-512)*2, -1023, 1023);
-      y1 = map(y1, 0, 1023, 0, 31);
-      message |= (state << 5);
-      message |= y1;
-      state = 0;
-  }
+  x1 = analogRead(A7);
+  x1 = map(x1, 0, 1023, 0, 255);
+  y1 = analogRead(A6);
+  y1 = map(y1, 0, 1023, 0, 255);
+  message |= x1 | y1 << 8;
   Serial.print("Before");
   if (!radio.write( &message, sizeof(unsigned long) )){
    Serial.println(F("failed"));

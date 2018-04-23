@@ -67,6 +67,10 @@ void setup() {
   pinMode(Y_IN2_PIN, OUTPUT);
 }
 
+  // Sets "Previous Values" for very beginning
+  int prevMotorY = 1;      // Previous Joystick 1 Y-axis value
+  int prevMotorX = 2;      // Previous Joystick 1 X-axis value
+  
 void loop() {
 
   /****************** Pong Back Role ***************************/
@@ -75,22 +79,22 @@ void loop() {
   //unsigned long identifier; // identifier
   int motorY;      //Joystick 1 Y-axis
   int motorX;      //Joystick 1 X-axis
+  
+  int dampingConstant = 30; // How fast input increases or decreases. Higher = faster acceleration.
+  int outputMotorY;      // Actual Joystick 1 Y-axis output, for debugging
+  int outputMotorX;      // Actual Joystick 1 X-axis output, for debugging
+    
   if( radio.available()){
     // Variable for the received timestamp
     while (radio.available()) {                                   // While there is data ready
       radio.read( &payload, sizeof(unsigned long) );             // Get the payload
     }
   
-    //radio.stopListening();                                        // First, stop listening so we can talk
-    //radio.write( &payload, sizeof(unsigned long) );              // Send the final one back.
-    //radio.startListe ning();                                       // Now, resume listening so we catch the next packets.
-    
     //Decode our message into individual motor signals
     // Payload structure:
     //  ---- ---- | ---- ---- | ---- ---- | ---- ---- |
     //    Other       Other     Motor X      Motor Y
     //-------------------------------------------------------
-  
     motorY = payload & 0x000000FF; // Mask Everything except the Motor Back signal
     payload = payload;            //Recopy payload (since we masked out all the other bits)
     motorX = (payload & 0x0000FF00) >> 8; // Mask Everything except the Motor Forward signal and shift it to the lowest bits
@@ -98,7 +102,14 @@ void loop() {
     //Joystick values can range -127 and +127, set 127 to 0 by subtracting 127
     motorY -= 127;
     motorX -= 127;
-  
+    
+    // UNCOMMENT TO VIEW CURRENT JOYSTICK VALUES
+    /*Serial.print("Y_X: ");
+    Serial.print(motorY);
+    Serial.print("_");
+    Serial.println(motorX);
+    Serial.print("\n");*/
+    
     //Encode m1 and m2 values as:
     //Bits
     //IN1 IN2 | Function   |
@@ -107,12 +118,38 @@ void loop() {
     // 0  1   | forward    |
     // 1  0   | backward   |
     // 1  1   | brake      |
-  
-    //Encoding m1
-    Serial.print("Y_X: ");
-    Serial.print(motorY);
+
+    if (motorY > prevMotorY){         // if increasing in Y, scale up by damping constant
+      prevMotorY += dampingConstant;
+      Serial.print("Yes");
+      if (prevMotorY > motorY){
+        Serial.print("UH OH BOYO");
+        prevMotorY = motorY;}
+      }
+    if (motorY < prevMotorY){         // if decreasing in Y, scale down by damping constant
+      prevMotorY -= dampingConstant;
+      if (prevMotorY < motorY){
+        prevMotorY = motorY;}
+      }
+    if (motorX > prevMotorX){         // if increasing in X, scale up by damping constant
+      prevMotorX += dampingConstant;
+      if (prevMotorX > motorX){
+        prevMotorX = motorX;}
+      }
+    if (motorX < prevMotorX){         // if decreasing in X, scale down by damping constant
+      prevMotorX -= dampingConstant;
+      if (prevMotorX < motorX){
+        prevMotorX = motorX;}
+      }
+      
+    // UNCOMMENT TO VIEW ACTUAL OUTPUT DURING SCALING
+    /*Serial.print("outputY_outputX: ");
+    Serial.print(prevMotorY);
     Serial.print("_");
-    Serial.println(motorX);
+    Serial.println(prevMotorX);
+    Serial.println("\n");*/
+    
+    //Encoding m1
     if (motorY < -5) {
       //need to move backward ( IN1 IN2 = 1 0 )
       // and convert joystick angle to positive analog signal from 0 to 1024
@@ -120,8 +157,8 @@ void loop() {
       digitalWrite(Y_IN2_PIN, 0);
       digitalWrite(Y_IN1_PIN2, 1);
       digitalWrite(Y_IN2_PIN2, 0);
-      analogWrite(Y_PWM_PIN, abs(motorY) * 8);
-      analogWrite(Y_PWM_PIN2, abs(motorY) * 8);
+      analogWrite(Y_PWM_PIN, abs(prevMotorY) * 8);
+      analogWrite(Y_PWM_PIN2, abs(prevMotorY) * 8);
     }
     else if (motorY > 5) {
       //need to move forward ( IN1 IN2 = 0 1 )
@@ -130,18 +167,18 @@ void loop() {
       digitalWrite(Y_IN2_PIN, 1);
       digitalWrite(Y_IN1_PIN2, 0);
       digitalWrite(Y_IN2_PIN2, 1);
-      analogWrite(Y_PWM_PIN, (motorY-1) * 8);
-      analogWrite(Y_PWM_PIN2, (motorY-1) * 8);
+      analogWrite(Y_PWM_PIN, (prevMotorY-1) * 8);
+      analogWrite(Y_PWM_PIN2, (prevMotorY-1) * 8);
     }
     else {
       //need to release motor ( IN1 IN2 = 0 0 )
       // and set speed to 0
       digitalWrite(Y_IN1_PIN, 0);
       digitalWrite(Y_IN2_PIN, 0);
-      analogWrite(Y_PWM_PIN, 0);
+      analogWrite(Y_PWM_PIN, abs(prevMotorY) * 8);
       digitalWrite(Y_IN1_PIN2, 0);
       digitalWrite(Y_IN2_PIN2, 0);
-      analogWrite(Y_PWM_PIN2, 0);
+      analogWrite(Y_PWM_PIN2,  abs(prevMotorY) * 8);
     }
   
     //Encoding m2
@@ -152,8 +189,8 @@ void loop() {
       digitalWrite(X_IN2_PIN, 0);
       digitalWrite(X_IN1_PIN2, 1);
       digitalWrite(X_IN2_PIN2, 0);
-      analogWrite(X_PWM_PIN, abs(motorX) * 8);
-      analogWrite(X_PWM_PIN2, abs(motorX) * 8);
+      analogWrite(X_PWM_PIN, abs(prevMotorX) * 8);
+      analogWrite(X_PWM_PIN2, abs(prevMotorX) * 8);
     }
     else if (motorX > 5) {
       //need to move forward ( IN1 IN2 = 0 1 )
@@ -162,18 +199,18 @@ void loop() {
       digitalWrite(X_IN2_PIN, 1);
       digitalWrite(X_IN1_PIN2, 0);
       digitalWrite(X_IN2_PIN2, 1);
-      analogWrite(X_PWM_PIN, (motorX-1) * 8);
-      analogWrite(X_PWM_PIN2, (motorX-1) * 8);
+      analogWrite(X_PWM_PIN, (prevMotorX-1) * 8);
+      analogWrite(X_PWM_PIN2, (prevMotorX-1) * 8);
     }
     else {
       //need to release motor ( IN1 IN2 = 0 0 )
       // and set speed to 0
       digitalWrite(X_IN1_PIN, 0);
       digitalWrite(X_IN2_PIN, 0);
-      analogWrite(X_PWM_PIN, 0);
+      analogWrite(X_PWM_PIN, abs(prevMotorX) * 8);
       digitalWrite(X_IN1_PIN2, 0);
       digitalWrite(X_IN2_PIN2, 0);
-      analogWrite(X_PWM_PIN2, 0);
+      analogWrite(X_PWM_PIN2, abs(prevMotorX) * 8 );
     }
   }
 } // Loop

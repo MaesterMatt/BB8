@@ -80,10 +80,6 @@ void loop() {
     while (radio.available()) {                                   // While there is data ready
       radio.read( &payload, sizeof(unsigned long) );             // Get the payload
     }
-  
-    //radio.stopListening();                                        // First, stop listening so we can talk
-    //radio.write( &payload, sizeof(unsigned long) );              // Send the final one back.
-    //radio.startListe ning();                                       // Now, resume listening so we catch the next packets.
     
     //Decode our message into individual motor signals
     // Payload structure:
@@ -97,6 +93,7 @@ void loop() {
   
     //Joystick values can range -127 and +127, set 127 to 0 by subtracting 127
     motorY -= 127;
+    motorY = -motorY; // account for inverted control
     motorX -= 127;
   
     //Encode m1 and m2 values as:

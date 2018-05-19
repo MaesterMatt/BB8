@@ -65,6 +65,6 @@ void loop() {
   }
   Serial.println("After");
   // Try again 1s later
-  delay(1000);
+  delay(100);
 } // Loop
 
